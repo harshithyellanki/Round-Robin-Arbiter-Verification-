@@ -1,243 +1,126 @@
-Round-Robin Arbiter Verification
+# Round-Robin Arbiter Verification Environment
 
-A SystemVerilog verification project for a parameterized Round-Robin Arbiter.
-The project implements a modular class-based verification environment including randomized stimulus, driver/monitor components, a reference model, scoreboard checking, SystemVerilog assertions, and functional coverage.
+## Overview
 
-This repository demonstrates ASIC/FPGA verification methodologies used in modern digital design flows.
+This project implements a complete SystemVerilog-based verification environment for a parameterized **Round-Robin Arbiter**. The arbiter distributes access among multiple requesters using a rotating priority scheme to ensure fair access to a shared resource.
 
-Project Overview
+The objective of this project is to verify arbitration correctness, grant behavior, and request servicing using a structured class-based verification environment with constrained-random stimulus, monitoring, scoreboard checking, assertions, and functional coverage.
 
-A Round-Robin Arbiter distributes access to a shared resource among multiple requesters in a fair manner. Unlike fixed-priority arbiters, round-robin arbitration prevents starvation by rotating priority after each grant.
+This repository demonstrates industry-style digital design verification methodology and modular testbench architecture.
 
-This project verifies a parameterized round-robin arbiter using a structured SystemVerilog verification environment.
 
-Key Features
 
-Parameterized number of requesters
+## Design Description
 
-One-hot grant generation
+The Round-Robin Arbiter DUT includes:
 
-Rotating priority pointer
+- **Parameterized number of requesters**: Scalable bus width for various system sizes.
+- **Rotating priority pointer**: Ensures fairness across all agents to prevent starvation.
+- **One-hot grant generation**: Guarantees only one requester is served at a time.
+- **Registered grant outputs**: Synchronized timing for stable downstream consumption.
+- **Enable-controlled arbitration**: Support for global control and power management.
 
-Registered output grants
+The arbiter scans the request vector starting from the current priority pointer and grants access to the first active requester. After issuing a grant, the priority pointer moves to the next requester to maintain fairness in the next arbitration cycle.
 
-Constrained random stimulus generation
+## Verification Architecture
 
-Reference model based checking
+The verification environment follows a modular layered architecture and includes:
 
-Scoreboard comparison
+### 1. Transaction Layer
+- `arb_transaction` class modeling the request vector, enable signal, and observed grant vector.
+- Includes randomization constraints to create diverse and stressful arbitration scenarios.
 
-SystemVerilog Assertions (SVA)
+### 2. Stimulus Generation
+- Constrained-random request generation to hit corner cases.
+- Focus areas: Single active requester, multiple simultaneous requests, and full request vector activation.
+- Random `enable` signal behavior to test arbitration gating logic.
 
-Functional coverage collection
+### 3. Driver
+- Receives transaction objects and drives stimulus to the DUT interface.
+- Manages clock-synchronized driving of the `request` and `enable` signals.
 
-QuestaSim simulation automation
+### 4. Monitor
+- Passively observes the DUT interface activity.
+- Captures `req`, `gnt`, and `en` signals per clock cycle.
+- Forwards observed transactions to the scoreboard and coverage components via mailboxes.
 
-Arbiter Design
-Inputs
-Signal	Description
-clk	System clock
-rst_n	Active-low reset
-enable	Enables arbitration
-req[N-1:0]	Request vector
-Outputs
-Signal	Description
-gnt[N-1:0]	One-hot grant vector
-Arbitration Behavior
+### 5. Scoreboard
+- Implements a **Golden Reference Model** of the round-robin logic.
+- Maintains an internal state of the expected priority pointer.
+- Compares DUT grant outputs against predicted results and flags mismatches.
 
-Arbiter scans request lines starting from the current priority pointer
+### 6. Assertions (SVA)
+- **Grant One-Hot**: Verifies that no more than one grant is active at any time.
+- **Legal Grant**: Verifies that a grant is only issued to an active request.
+- **Enable Check**: Validates that no grants are issued when the arbiter is disabled.
 
-The first active request encountered receives the grant
+### 7. Functional Coverage
+- Coverage of request vector patterns and grant distribution.
+- Monitoring of enable signal state transitions.
+- Cross-coverage between requester IDs to ensure the rotation logic visits all ports.
 
-Grant output is one-hot encoded
+## Project Structure
 
-Pointer updates to the next requester
+```text
+rr_arbiter_project/
+│
+├── dut/                # Round-Robin Arbiter RTL
+├── tb/                 # Testbench components (Driver, Monitor, Scoreboard, etc.)
+├── scripts/            # Questa simulation scripts (.do files)
+├── modelsim.ini        # ModelSim configuration
+├── work/               # Simulation library (generated)
+├── transcript          # Simulation transcript (generated)
+└── README.md           # Project documentation
+Simulation Instructions
+This project is designed for use with QuestaSim / ModelSim.
+All commands are executed from the project root directory.
 
-Grant is registered, so it appears one clock cycle later
+Compile and Run (Batch Mode)
+Bash
+vsim -c -do "do scripts/run.do; run -all; quit"
+This command:
 
-Verification Architecture
+Compiles the RTL and Testbench files.
 
-Transaction
-↓
-Driver → DUT
-↓
-Monitor
-├── Coverage
-└── Scoreboard → Reference Model
+Launches the testbench top-level module.
 
-Verification Components
-Transaction (rr_trans.sv)
+Runs the simulation to completion and exits automatically.
 
-Represents randomized stimulus including:
+Run Only (After Compilation)
+Bash
+vsim -c work.tb_top -do "run -all; quit"
+GUI Mode with Waveforms
+Bash
+vsim work.tb_top -do "add wave -r /*; run -all"
+Verification Flow
+Generate: Create constrained-random request patterns in the Generator.
 
-Request vector
+Drive: Driver applies the stimulus to the arbiter via the Virtual Interface.
 
-Enable signal
+Monitor: The Monitor samples the request and grant signals on the clock edge.
 
-Constrained number of active requests
+Scoreboard: Compares the DUT's grant with the internal reference model.
 
-Driver (rr_driver.sv)
+Assertions: SVA monitors validate protocol properties in real-time.
 
-Receives transactions
+Functional Coverage: Collection of metrics to ensure the verification plan is satisfied.
 
-Drives signals to the DUT interface
+Key Verification Features
+Constrained-random stimulus: Maximizes coverage of the arbiter's state space.
 
-Monitor (rr_monitor.sv)
+Self-checking scoreboard: Provides automated pass/fail reporting.
 
-Observes DUT signals
+Assertion-based protocol checking: Catches logic and timing violations instantly.
 
-Sends data to scoreboard and coverage
+Functional coverage collection: Quantifies the thoroughness of the verification.
 
-Reference Model (rr_ref_model.sv)
+Script-based automation: Streamlined flow for faster development cycles.
 
-Implements the golden round-robin arbitration algorithm.
+Future Enhancements
+Conversion to full UVM (Universal Verification Methodology) environment.
 
-Scoreboard (rr_scoreboard.sv)
+Directed fairness tests for long-run statistical fairness analysis.
 
-Compares:
+Integration of Regression automation for nightly builds.
 
-DUT Grant
-vs
-Reference Model Grant
-
-Accounting for 1-cycle registered latency.
-
-Assertions (rr_assertions.sv)
-
-Ensures:
-
-Grant is onehot0
-
-Grant corresponds to a valid request
-
-No grant when disabled
-
-Requests eventually get serviced
-
-Coverage (rr_coverage.sv)
-
-Functional coverage includes:
-
-Enable ON/OFF
-
-Number of active requests
-
-Grant index
-
-Cross coverage between request patterns and grants
-
-Environment (rr_env.sv)
-
-Integrates:
-
-Driver
-
-Monitor
-
-Scoreboard
-
-Coverage
-
-Communication is done through mailboxes.
-
-Top Testbench (tb_top.sv)
-
-Instantiates DUT and interface
-
-Instantiates assertions
-
-Creates verification environment
-
-Runs randomized tests
-
-Prints PASS/FAIL summary
-
-Repository Structure
-
-Round-Robin-Arbiter-Verification/
-
-dut/
-    rr_arbiter.sv
-
-tb/
-    rr_assertions.sv
-    rr_coverage.sv
-    rr_driver.sv
-    rr_env.sv
-    rr_if.sv
-    rr_monitor.sv
-    rr_ref_model.sv
-    rr_scoreboard.sv
-    rr_trans.sv
-    tb_pkg.sv
-    tb_top.sv
-
-sim/
-    run.do
-    modelsim.ini
-
-README.md
-
-Running Simulation
-
-Navigate to the simulation directory:
-
-cd sim
-
-Run the script:
-
-vsim -do run.do
-
-Or inside Questa:
-
-do run.do
-
-Simulation Flow
-
-The script:
-
-Creates simulation library
-
-Compiles DUT
-
-Compiles testbench
-
-Launches simulation
-
-Adds waveforms
-
-Runs simulation to completion
-
-Expected Output
-
-If correct:
-
-TEST COMPLETE
-SCOREBOARD ERRORS = 0
-PASS
-
-Tools Used
-
-SystemVerilog
-
-QuestaSim / ModelSim
-
-Future Improvements
-
-Possible extensions:
-
-Directed tests
-
-Parameter sweeps
-
-Fairness verification
-
-Automated regression
-
-Full UVM implementation
-
-Author
-
-Harshith Yellanki
-
-SystemVerilog verification project demonstrating constrained random testing, reference modeling, scoreboard checking, assertions, and functional coverage.
+Generation of HTML coverage reports for stakeholder review.

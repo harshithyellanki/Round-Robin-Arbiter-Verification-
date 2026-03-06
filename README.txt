@@ -310,4 +310,3 @@ Potential extensions to this project include:
 **Harshith Yellanki**
 
 This project demonstrates a **SystemVerilog-based verification methodology** including constrained random stimulus, reference modeling, scoreboard checking, assertions, and functional coverage.
-```

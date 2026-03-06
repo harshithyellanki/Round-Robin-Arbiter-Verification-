@@ -1,299 +1,243 @@
+Round-Robin Arbiter Verification
 
-# Round-Robin Arbiter Verification
+A SystemVerilog verification project for a parameterized Round-Robin Arbiter.
+The project implements a modular class-based verification environment including randomized stimulus, driver/monitor components, a reference model, scoreboard checking, SystemVerilog assertions, and functional coverage.
 
-A SystemVerilog verification project for a **parameterized Round-Robin Arbiter**.
-The project implements a **modular class-based verification environment** (similar to UVM architecture) including randomized stimulus, driver/monitor components, a reference model, scoreboard checking, SystemVerilog assertions, and functional coverage.
+This repository demonstrates ASIC/FPGA verification methodologies used in modern digital design flows.
 
-This repository demonstrates core **ASIC/FPGA verification methodologies** used in modern digital design verification flows.
+Project Overview
 
----
-
-# Project Overview
-
-A **Round-Robin Arbiter** distributes access to a shared resource among multiple requesters in a fair manner. Unlike fixed-priority arbiters, round-robin arbitration prevents starvation by rotating priority after each grant.
+A Round-Robin Arbiter distributes access to a shared resource among multiple requesters in a fair manner. Unlike fixed-priority arbiters, round-robin arbitration prevents starvation by rotating priority after each grant.
 
 This project verifies a parameterized round-robin arbiter using a structured SystemVerilog verification environment.
 
-## Key Features
+Key Features
 
-* Parameterized number of requesters
-* One-hot grant generation
-* Rotating priority pointer
-* Registered output grants
-* Constrained random stimulus generation
-* Reference model based checking
-* Scoreboard comparison
-* SystemVerilog Assertions (SVA)
-* Functional coverage collection
-* QuestaSim simulation automation
+Parameterized number of requesters
 
----
+One-hot grant generation
 
-# Arbiter Design
+Rotating priority pointer
 
-## Inputs
+Registered output grants
 
-| Signal       | Description         |
-| ------------ | ------------------- |
-| `clk`        | System clock        |
-| `rst_n`      | Active-low reset    |
-| `enable`     | Enables arbitration |
-| `req[N-1:0]` | Request vector      |
+Constrained random stimulus generation
 
-## Outputs
+Reference model based checking
 
-| Signal       | Description          |
-| ------------ | -------------------- |
-| `gnt[N-1:0]` | One-hot grant vector |
+Scoreboard comparison
 
-## Arbitration Behavior
+SystemVerilog Assertions (SVA)
 
-1. The arbiter scans request lines starting from the **current priority pointer**
-2. The **first active request** encountered receives the grant
-3. The grant output is **one-hot encoded**
-4. After granting access, the pointer updates to the **next requester**
-5. The grant output is **registered**, meaning the grant appears **one clock cycle after the request evaluation**
+Functional coverage collection
 
----
+QuestaSim simulation automation
 
-# Verification Architecture
+Arbiter Design
+Inputs
+Signal	Description
+clk	System clock
+rst_n	Active-low reset
+enable	Enables arbitration
+req[N-1:0]	Request vector
+Outputs
+Signal	Description
+gnt[N-1:0]	One-hot grant vector
+Arbitration Behavior
 
-The verification environment follows a **layered architecture similar to UVM**, implemented using SystemVerilog classes.
+Arbiter scans request lines starting from the current priority pointer
 
-```
+The first active request encountered receives the grant
+
+Grant output is one-hot encoded
+
+Pointer updates to the next requester
+
+Grant is registered, so it appears one clock cycle later
+
+Verification Architecture
+
 Transaction
-    │
-    ▼
-Driver ──► DUT
-    │
-    ▼
+↓
+Driver → DUT
+↓
 Monitor
-    │
-    ├──► Coverage
-    │
-    └──► Scoreboard
-            │
-            ▼
-       Reference Model
-```
+├── Coverage
+└── Scoreboard → Reference Model
 
----
+Verification Components
+Transaction (rr_trans.sv)
 
-# Verification Components
+Represents randomized stimulus including:
 
-## Transaction (`rr_trans.sv`)
+Request vector
 
-Represents a randomized stimulus transaction including:
+Enable signal
 
-* Request vector
-* Enable signal
-* Constraints controlling the number of active requests
+Constrained number of active requests
 
----
+Driver (rr_driver.sv)
 
-## Driver (`rr_driver.sv`)
+Receives transactions
 
-The driver:
+Drives signals to the DUT interface
 
-* Receives transactions
-* Drives signals to the DUT through the interface
+Monitor (rr_monitor.sv)
 
----
+Observes DUT signals
 
-## Monitor (`rr_monitor.sv`)
+Sends data to scoreboard and coverage
 
-The monitor:
+Reference Model (rr_ref_model.sv)
 
-* Observes DUT interface signals
-* Sends observed transactions to
+Implements the golden round-robin arbitration algorithm.
 
-  * Coverage
-  * Scoreboard
+Scoreboard (rr_scoreboard.sv)
 
----
+Compares:
 
-## Reference Model (`rr_ref_model.sv`)
-
-Implements the **golden arbitration algorithm** used to compute expected grants.
-
----
-
-## Scoreboard (`rr_scoreboard.sv`)
-
-The scoreboard compares:
-
-```
-Observed DUT grant
+DUT Grant
 vs
-Expected grant from reference model
-```
+Reference Model Grant
 
-Because the DUT grant is **registered**, comparisons account for a **one-cycle latency**.
+Accounting for 1-cycle registered latency.
 
----
+Assertions (rr_assertions.sv)
 
-## Assertions (`rr_assertions.sv`)
+Ensures:
 
-SystemVerilog Assertions verify protocol correctness:
+Grant is onehot0
 
-* Grant must be **onehot0**
-* Grant must correspond to a **valid request**
-* No grant when arbiter is disabled
-* A request must eventually produce a grant
+Grant corresponds to a valid request
 
----
+No grant when disabled
 
-## Functional Coverage (`rr_coverage.sv`)
+Requests eventually get serviced
 
-Coverage ensures the arbiter is exercised across scenarios such as:
+Coverage (rr_coverage.sv)
 
-* Enable ON / OFF
-* Number of active requesters
-* Grant index
-* Cross coverage between request patterns and grants
+Functional coverage includes:
 
----
+Enable ON/OFF
 
-## Environment (`rr_env.sv`)
+Number of active requests
 
-The environment integrates:
+Grant index
 
-* Driver
-* Monitor
-* Scoreboard
-* Coverage
+Cross coverage between request patterns and grants
 
-Communication between components is implemented using **mailboxes**.
+Environment (rr_env.sv)
 
----
+Integrates:
 
-## Top Testbench (`tb_top.sv`)
+Driver
 
-The top-level testbench:
+Monitor
 
-* Instantiates the DUT and interface
-* Instantiates assertions
-* Creates the verification environment
-* Runs randomized testing
-* Reports final PASS/FAIL results
+Scoreboard
 
----
+Coverage
 
-# Repository Structure
+Communication is done through mailboxes.
 
-```
+Top Testbench (tb_top.sv)
+
+Instantiates DUT and interface
+
+Instantiates assertions
+
+Creates verification environment
+
+Runs randomized tests
+
+Prints PASS/FAIL summary
+
+Repository Structure
+
 Round-Robin-Arbiter-Verification/
 
 dut/
-   rr_arbiter.sv
+    rr_arbiter.sv
 
 tb/
-   rr_assertions.sv
-   rr_coverage.sv
-   rr_driver.sv
-   rr_env.sv
-   rr_if.sv
-   rr_monitor.sv
-   rr_ref_model.sv
-   rr_scoreboard.sv
-   rr_trans.sv
-   tb_pkg.sv
-   tb_top.sv
+    rr_assertions.sv
+    rr_coverage.sv
+    rr_driver.sv
+    rr_env.sv
+    rr_if.sv
+    rr_monitor.sv
+    rr_ref_model.sv
+    rr_scoreboard.sv
+    rr_trans.sv
+    tb_pkg.sv
+    tb_top.sv
 
 sim/
-   run.do
-   modelsim.ini
-   transcript
-   vsim.wlf
-   work/
+    run.do
+    modelsim.ini
 
 README.md
-```
 
----
+Running Simulation
 
-# Running the Simulation
+Navigate to the simulation directory:
 
-This project is designed for **QuestaSim / ModelSim**.
-
-## Step 1
-
-Navigate to the simulation directory
-
-```
 cd sim
-```
 
-## Step 2
+Run the script:
 
-Run the simulation script
-
-```
 vsim -do run.do
-```
 
-Alternatively from the Questa console
+Or inside Questa:
 
-```
 do run.do
-```
 
----
+Simulation Flow
 
-# What `run.do` Does
+The script:
 
-The script performs the following:
+Creates simulation library
 
-1. Creates the simulation library (`work`)
-2. Compiles the DUT
-3. Compiles interface and assertions
-4. Compiles testbench package
-5. Compiles the top testbench
-6. Starts simulation
-7. Adds waveform signals
-8. Runs simulation to completion
+Compiles DUT
 
----
+Compiles testbench
 
-# Expected Simulation Output
+Launches simulation
 
-If the DUT behaves correctly the simulation prints:
+Adds waveforms
 
-```
-====================================
+Runs simulation to completion
+
+Expected Output
+
+If correct:
+
 TEST COMPLETE
 SCOREBOARD ERRORS = 0
-====================================
 PASS
-```
 
-If mismatches occur the scoreboard increments the error count and the test reports **FAIL**.
+Tools Used
 
----
+SystemVerilog
 
-# Tools Used
+QuestaSim / ModelSim
 
-* SystemVerilog
-* QuestaSim / ModelSim
-
----
-
-# Future Improvements
+Future Improvements
 
 Possible extensions:
 
-* Directed testcases
-* Parameter sweep testing
-* Long-run fairness verification
-* Regression automation
-* Converting the environment to **UVM**
-* Adding `.gitignore` to exclude simulation artifacts
+Directed tests
 
----
+Parameter sweeps
 
-# Author
+Fairness verification
 
-**Harshith Yellanki**
+Automated regression
+
+Full UVM implementation
+
+Author
+
+Harshith Yellanki
 
 SystemVerilog verification project demonstrating constrained random testing, reference modeling, scoreboard checking, assertions, and functional coverage.
-

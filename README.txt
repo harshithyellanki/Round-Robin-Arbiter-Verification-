@@ -1,4 +1,3 @@
-
 # Round-Robin Arbiter Verification
 
 A SystemVerilog verification project for a **parameterized Round-Robin Arbiter**.  
@@ -60,7 +59,6 @@ This project verifies a parameterized round-robin arbiter using a structured Sys
 
 The verification environment follows a **layered architecture similar to UVM**, but implemented using standard SystemVerilog classes.
 
-```
 
 Transaction
 │
@@ -77,7 +75,6 @@ Monitor
 ▼
 Reference Model
 
-```
 
 ---
 
@@ -107,7 +104,7 @@ The driver:
 The monitor:
 
 - Observes DUT interface signals
-- Sends observed transactions to
+- Sends observed transactions to:
   - Coverage
   - Scoreboard
 
@@ -123,13 +120,11 @@ Implements the **golden arbitration algorithm** used to calculate the expected g
 
 The scoreboard compares:
 
-```
 
 Observed DUT grant
 vs
 Expected grant from reference model
 
-```
 
 Because the DUT grant is **registered**, comparisons account for a **one-cycle latency**.
 
@@ -184,36 +179,34 @@ The top-level testbench:
 
 ## Repository Structure
 
-```
 
 Round-Robin-Arbiter-Verification/
 │
 ├── dut/
-│   └── rr_arbiter.sv
+│ └── rr_arbiter.sv
 │
 ├── tb/
-│   ├── rr_assertions.sv
-│   ├── rr_coverage.sv
-│   ├── rr_driver.sv
-│   ├── rr_env.sv
-│   ├── rr_if.sv
-│   ├── rr_monitor.sv
-│   ├── rr_ref_model.sv
-│   ├── rr_scoreboard.sv
-│   ├── rr_trans.sv
-│   ├── tb_pkg.sv
-│   └── tb_top.sv
+│ ├── rr_assertions.sv
+│ ├── rr_coverage.sv
+│ ├── rr_driver.sv
+│ ├── rr_env.sv
+│ ├── rr_if.sv
+│ ├── rr_monitor.sv
+│ ├── rr_ref_model.sv
+│ ├── rr_scoreboard.sv
+│ ├── rr_trans.sv
+│ ├── tb_pkg.sv
+│ └── tb_top.sv
 │
 ├── sim/
-│   ├── run.do
-│   ├── modelsim.ini
-│   ├── transcript
-│   ├── vsim.wlf
-│   └── work/
+│ ├── run.do
+│ ├── modelsim.ini
+│ ├── transcript
+│ ├── vsim.wlf
+│ └── work/
 │
 └── README.md
 
-```
 
 ---
 
@@ -223,31 +216,21 @@ This project is designed for **QuestaSim / ModelSim**.
 
 ### Step 1
 
-Navigate to the simulation directory:
-
-```
 
 cd sim
 
-```
 
 ### Step 2
 
-Run the simulation script:
-
-```
 
 vsim -do run.do
 
-```
 
 Alternatively from the QuestaSim console:
 
-```
 
 do run.do
 
-```
 
 ---
 
@@ -270,16 +253,12 @@ The script performs the following steps:
 
 If the DUT behaves correctly, the simulation prints:
 
-```
-
 ====================================
 TEST COMPLETE
 SCOREBOARD ERRORS = 0
-=====================
 
 PASS
 
-```
 
 If mismatches occur, the scoreboard increments the error count and the test reports **FAIL**.
 
